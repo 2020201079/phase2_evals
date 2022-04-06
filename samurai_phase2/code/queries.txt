@@ -1,0 +1,45 @@
+SELECT Employees.LastName, Orders.OrderID
+FROM Orders,Employees
+WHERE Orders.EmployeeID = Employees.EmployeeID 
+AND (Employees.LastName = 'Davolio' 
+OR Employees.LastName = 'Fuller') AND (Employees.age > 30)
+AND (Employees.sex = 'MALE')
+GROUP BY Employees.LastName;
+
+SELECT EMP.ENAME,EMP.AGE
+FROM PROJ, ASG, EMP
+WHERE ASG.ENO = EMP.ENO
+AND ASG.PNO = PROJ.PNO
+AND EMP.ENAME != "J. Doe"
+AND PROJ.PNAME = "CAD/CAM"
+AND  (ASG.DUR = 12 OR ASG.DUR = 24)
+
+SELECT ACCOUNT.account_status
+FROM ACCOUNT,BRANCH
+WHERE ACCOUNT.branch_id = BRANCH.branch_id
+AND BRANCH.branch_city='Hyderabad'
+
+
+# get customer details of inactive account
+Select customer.first_name,cutomer.mobile 
+from customer,account 
+where customer.cust_id = account.cust_id
+and account.account_status = "inactive"
+
+# get all the names , branch with balance > 100
+Select customer.first_name,branch.branch_name
+from customer,account,branch
+where customer.cust_id = account.cust_id
+and branch.branch_id = account.branch_id
+and account.balance > 10000 
+and account_status = "active"
+
+
+Select customer.first_name,branch,branch_name
+from customer,account,branch,trandetails
+where customer.cust_id = account.cust_id
+and branch.branch_id = account.branch_id
+and account.account_number = trandetails.account_number
+and trandetails.date = '10-10-2016'
+and trandetails.amount > 5000
+and account.balance < 20000

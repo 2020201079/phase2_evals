@@ -1,0 +1,34 @@
+SELECT ENAME
+FROM PROJ, ASG, EMP
+WHERE ASG.ENO = EMP.ENO
+AND ASG.PNO = PROJ.PNO
+AND EMP.ENAME != "J. Doe"
+AND PROJ.PNAME = "CAD/CAM"
+AND  (ASG.DUR = 12 OR ASG.DUR = 24)
+
+SELECT ENAME,AGE
+FROM PROJ, ASG, EMP
+WHERE ASG.ENO = EMP.ENO
+AND ASG.PNO = PROJ.PNO
+AND EMP.ENAME != "J. Doe"
+AND PROJ.PNAME = "CAD/CAM"
+AND  (ASG.DUR = 12 OR ASG.DUR = 24)
+
+
+SELECT ENAME,AGE
+FROM ASG, EMP
+WHERE ASG.ENO = EMP.ENO
+
+SELECT ENAME FROM EMP WHERE ENO=5 OR ENO=10
+
+SELECT COUNT(CustomerID), Country
+FROM Customers
+GROUP BY Country
+HAVING COUNT(CustomerID) > 5;
+
+SELECT Employees.LastName, Orders.OrderID
+FROM Orders,Employees
+WHER Orders.EmployeeID = Employees.EmployeeID
+Employees.LastName = 'Davolio' OR Employees.LastName = 'Fuller'
+GROUP BY Employees.LastName
+HAVING Orders.OrderID > 25;

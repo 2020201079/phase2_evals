@@ -1,0 +1,377 @@
+import pymysql
+from pymysql.constants import CLIENT
+ip_address = ['10.3.5.211','10.3.5.204','10.3.5.208','10.3.5.205']
+def mysqlconnect(ip):
+	# To connect MySQL database
+	print(ip)
+	conn = pymysql.connect(
+		host=ip,
+		user='ryuga',
+		password = "vishwak@1999",
+		db='samurai',
+		client_flag=CLIENT.MULTI_STATEMENTS,
+		)
+	cur = conn.cursor()
+	cur.execute("select @@version")
+
+	# print(" ------- creating tables ----------")
+	# creating system catalog tables
+	cur.execute(""" CREATE TABLE IF NOT EXISTS APPLICATION_TABLE 
+	(Table_Name varchar(255) NOT NULL
+	,Number_Cols int NOT NULL,
+	PRIMARY KEY (Table_Name)) """)
+
+	# print("--------- created application table ---------")
+	# creating col_info table
+	cur.execute(""" CREATE TABLE IF NOT EXISTS COL_INFO (Col_Id int,Col_Name varchar(255) NOT NULL
+	,PRIMARY KEY (Col_Id)) 
+	""")
+
+	# print("--------- created col info table ---------")
+
+	# creating col_info_application_table mapping table
+	cur.execute(""" CREATE TABLE IF NOT EXISTS COL_APP_MAPPING( 
+	Col_Id int,
+	Table_Name varchar(255),
+	PRIMARY KEY (Col_Id,Table_Name),
+	FOREIGN KEY (Col_Id) REFERENCES COL_INFO(Col_Id),
+	FOREIGN KEY (Table_Name) REFERENCES APPLICATION_TABLE(Table_Name)
+	)
+	""")
+
+	# print("--------- created col app mapping table ---------")
+	# creating fragmentation table
+	cur.execute(""" CREATE TABLE IF NOT EXISTS FRAGMENTATION(
+	Frag_Name varchar(255) NOT NULL,
+	Frag_Type varchar(255) NOT NULL,
+	Parent_Name varchar(255) NOT NULL, 
+	Table_Name varchar(255) NOT NULL,
+	PRIMARY KEY (Frag_Name),
+	FOREIGN KEY (Parent_Name) REFERENCES FRAGMENTATION(Frag_Name),
+	FOREIGN KEY (Table_Name) REFERENCES APPLICATION_TABLE(Table_Name) 
+	) 
+	""")
+	# creating predicate table
+	cur.execute(""" 
+	CREATE TABLE IF NOT EXISTS PREDICATE
+	(Pred_Id int,
+	Pred_Logic varchar(255),
+	PRIMARY KEY(Pred_Id) )
+	""")
+	# creating frag_pred_mapping table
+	cur.execute("""
+	CREATE TABLE IF NOT EXISTS FRAG_PRED_MAPPING(
+	Fragment_Name varchar(255),
+	Pred_Id int,
+	PRIMARY KEY(Pred_Id,Fragment_Name),
+	FOREIGN KEY (Pred_Id) REFERENCES PREDICATE(Pred_Id),
+	FOREIGN KEY (Fragment_Name) REFERENCES FRAGMENTATION (Frag_Name))
+	""")
+	#creating fragmentation col_info mapping table for vertical fragmentation
+	cur.execute("""
+	CREATE TABLE IF NOT EXISTS FRAG_COL_INFO_MAPPING(
+	Fragment_Name varchar(255),
+	Col_Id int,
+	PRIMARY KEY(Fragment_Name,Col_Id),
+	FOREIGN KEY (Fragment_Name) REFERENCES FRAGMENTATION(Frag_Name),
+	FOREIGN KEY (Col_Id) REFERENCES COL_INFO(Col_Id))
+	""")
+	#creating allocation_table
+	cur.execute("""
+	CREATE TABLE IF NOT EXISTS ALLOCATION(Site_Id varchar(255),IP_Addr varchar(255) NOT NULL,Port_No varchar(255),
+	User_Name varchar(255) NOT NULL,Password varchar(255) NOT NULL,
+	PRIMARY KEY (Site_Id)
+	)  
+	""")
+	#creating Mapping Table
+	cur.execute("""
+	CREATE TABLE IF NOT EXISTS MAPPING(Fragment_Name varchar(255),Site_Id varchar(255),
+	PRIMARY KEY (Fragment_Name,Site_Id),
+	FOREIGN KEY (Fragment_Name) REFERENCES FRAGMENTATION(Frag_Name),
+	FOREIGN KEY (Site_Id) REFERENCES ALLOCATION(Site_Id))
+	""")
+	# deleting all rows from table name
+	cur.execute("SET FOREIGN_KEY_CHECKS=0")
+	# cur.execute("ALTER TABLE FRAGMENTATION DROP Predicate_Logic")
+	# cur.execute("ALTER TABLE COL_APP_MAPPING ADD Is_Key BIT")
+	cur.execute("DELETE FROM MAPPING")
+	cur.execute("DELETE FROM FRAGMENTATION")
+	cur.execute("DELETE FROM ALLOCATION")
+	cur.execute("DELETE FROM APPLICATION_TABLE")
+	cur.execute("DELETE FROM COL_INFO")
+	cur.execute("DELETE FROM COL_APP_MAPPING")
+	cur.execute("DELETE FROM PREDICATE")
+	cur.execute("DELETE FROM FRAG_PRED_MAPPING")
+	cur.execute("DELETE FROM FRAG_COL_INFO_MAPPING")
+	cur.execute("SET FOREIGN_KEY_CHECKS=1")
+
+
+	# inserting values into application_table table
+	cur.execute("""
+		INSERT INTO APPLICATION_TABLE VALUES ('CUSTOMER',6);
+		INSERT INTO APPLICATION_TABLE VALUES ('BRANCH',3);
+		INSERT INTO APPLICATION_TABLE VALUES ('ACCOUNT',7);
+		INSERT INTO APPLICATION_TABLE VALUES ('TRAN_DETAILS',6);
+		INSERT INTO APPLICATION_TABLE VALUES ('labs',3);
+		INSERT INTO APPLICATION_TABLE VALUES ('faculty',4);
+		INSERT INTO APPLICATION_TABLE VALUES ('students',7);
+	""")
+	conn.commit()
+	# inserting values into COL_INFO table
+	cur.execute("""
+		INSERT INTO COL_INFO VALUES (1,'cust_id');
+		INSERT INTO COL_INFO VALUES (2,'first_name');
+		INSERT INTO COL_INFO VALUES (3,'last_name');
+		INSERT INTO COL_INFO VALUES (4,'city');
+		INSERT INTO COL_INFO VALUES (5,'mobile');
+		INSERT INTO COL_INFO VALUES (6,'dob');
+		INSERT INTO COL_INFO VALUES (7,'branch_id');
+		INSERT INTO COL_INFO VALUES (8,'branch_name');
+		INSERT INTO COL_INFO VALUES (9,'branch_city');
+		INSERT INTO COL_INFO VALUES (10,'account_number');
+		INSERT INTO COL_INFO VALUES (11,'balance');
+		INSERT INTO COL_INFO VALUES (12,'open_date');
+		INSERT INTO COL_INFO VALUES (13,'account_type');
+		INSERT INTO COL_INFO VALUES (14,'account_status');
+		INSERT INTO COL_INFO VALUES (15,'tran_id');
+		INSERT INTO COL_INFO VALUES (16,'date');
+		INSERT INTO COL_INFO VALUES (17,'medium');
+		INSERT INTO COL_INFO VALUES (18,'amount');
+		INSERT INTO COL_INFO VALUES (19,'type');
+
+		INSERT INTO COL_INFO VALUES (20,'lab_id');
+		INSERT INTO COL_INFO VALUES (21,'lab_name');
+		INSERT INTO COL_INFO VALUES (22,'lab_location');
+
+		INSERT INTO COL_INFO VALUES (23,'faculty_id');
+		INSERT INTO COL_INFO VALUES (24,'fname');
+		INSERT INTO COL_INFO VALUES (25,'lname');
+		INSERT INTO COL_INFO VALUES (26,'labId');
+
+		INSERT INTO COL_INFO VALUES (27,'rno');
+		INSERT INTO COL_INFO VALUES (28,'fname');
+		INSERT INTO COL_INFO VALUES (29,'lname');
+		INSERT INTO COL_INFO VALUES (30,'branch');
+		INSERT INTO COL_INFO VALUES (31,'cgpa');
+		INSERT INTO COL_INFO VALUES (32,'facId');
+		INSERT INTO COL_INFO VALUES (33,'expense');
+	""")
+	conn.commit()
+	# inserting values into COL_APP_MAPPING table
+	cur.execute("""
+		INSERT INTO COL_APP_MAPPING VALUES (1,'CUSTOMER',1);
+		INSERT INTO COL_APP_MAPPING VALUES (2,'CUSTOMER',0);
+		INSERT INTO COL_APP_MAPPING VALUES (3,'CUSTOMER',0);
+		INSERT INTO COL_APP_MAPPING VALUES (4,'CUSTOMER',0);
+		INSERT INTO COL_APP_MAPPING VALUES (5,'CUSTOMER',0);
+		INSERT INTO COL_APP_MAPPING VALUES (6,'CUSTOMER',0);
+		INSERT INTO COL_APP_MAPPING VALUES (7,'BRANCH',1);
+		INSERT INTO COL_APP_MAPPING VALUES (8,'BRANCH',0);
+		INSERT INTO COL_APP_MAPPING VALUES (9,'BRANCH',0);
+		INSERT INTO COL_APP_MAPPING VALUES (1,'ACCOUNT',0);
+		INSERT INTO COL_APP_MAPPING VALUES (7,'ACCOUNT',0);
+		INSERT INTO COL_APP_MAPPING VALUES (10,'ACCOUNT',1);
+		INSERT INTO COL_APP_MAPPING VALUES (11,'ACCOUNT',0);
+		INSERT INTO COL_APP_MAPPING VALUES (12,'ACCOUNT',0);
+		INSERT INTO COL_APP_MAPPING VALUES (13,'ACCOUNT',0);
+		INSERT INTO COL_APP_MAPPING VALUES (14,'ACCOUNT',0);
+		INSERT INTO COL_APP_MAPPING VALUES (10,'TRAN_DETAILS',0);
+		INSERT INTO COL_APP_MAPPING VALUES (15,'TRAN_DETAILS',1);
+		INSERT INTO COL_APP_MAPPING VALUES (16,'TRAN_DETAILS',0);
+		INSERT INTO COL_APP_MAPPING VALUES (17,'TRAN_DETAILS',0);
+		INSERT INTO COL_APP_MAPPING VALUES (18,'TRAN_DETAILS',0);
+		INSERT INTO COL_APP_MAPPING VALUES (19,'TRAN_DETAILS',0);
+
+		INSERT INTO COL_APP_MAPPING VALUES (20,'labs',1);
+		INSERT INTO COL_APP_MAPPING VALUES (21,'labs',0);
+		INSERT INTO COL_APP_MAPPING VALUES (22,'labs',0);
+
+		INSERT INTO COL_APP_MAPPING VALUES (23,'faculty',1);
+		INSERT INTO COL_APP_MAPPING VALUES (24,'faculty',0);
+		INSERT INTO COL_APP_MAPPING VALUES (25,'faculty',0);
+		INSERT INTO COL_APP_MAPPING VALUES (26,'faculty',0);
+
+		INSERT INTO COL_APP_MAPPING VALUES (27,'students',1);
+		INSERT INTO COL_APP_MAPPING VALUES (28,'students',0);
+		INSERT INTO COL_APP_MAPPING VALUES (29,'students',0);
+		INSERT INTO COL_APP_MAPPING VALUES (30,'students',0);
+		INSERT INTO COL_APP_MAPPING VALUES (31,'students',0);
+		INSERT INTO COL_APP_MAPPING VALUES (32,'students',0);
+		INSERT INTO COL_APP_MAPPING VALUES (33,'students',0);		
+	""")
+	conn.commit()
+	# inserting values into site_table
+	cur.execute("""
+		INSERT INTO ALLOCATION VALUES ('CP5','10.3.5.211','22','user','iiit123');
+		INSERT INTO ALLOCATION VALUES ('CP6','10.3.5.208','22','user','iiit123');
+		INSERT INTO ALLOCATION VALUES ('CP7','10.3.5.204','22','user','iiit123');
+		INSERT INTO ALLOCATION VALUES ('CP8','10.3.5.205','22','user','iiit123');
+	""")
+	conn.commit()
+	# inserting values into fragmentation table
+	cur.execute("""
+		INSERT INTO FRAGMENTATION  VALUES ('MP1','HF','MP1','CUSTOMER'),
+		('MP2','HF','MP2','CUSTOMER'),
+		('MP3','HF','MP3','CUSTOMER'),
+		('MP4','HF','MP4','CUSTOMER'),
+		('MP5','HF','MP5','CUSTOMER'),
+		('MP6','HF','MP6','CUSTOMER'),
+		('MP7','HF','MP7','BRANCH'),
+		('MP8','HF','MP8','BRANCH'),
+		('MP9','HF','MP9','BRANCH'),
+		('DP1','DHF','MP1','ACCOUNT'),
+		('DP2','DHF','MP2','ACCOUNT'),
+		('DP3','DHF','MP3','ACCOUNT'),
+		('DP4','DHF','MP4','ACCOUNT'),
+		('DP5','DHF','MP5','ACCOUNT'),
+		('DP6','DHF','MP6','ACCOUNT'),
+		('VP1','VF','VP1','TRAN_DETAILS'),
+		('VP2','VF','VP2','TRAN_DETAILS'),
+
+		('labs1','HF','labs1','labs'),
+		('labs2','HF','labs2','labs'),
+		('labs3','HF','labs3','labs'),
+		('labs4','HF','labs4','labs'),
+
+		('faculty1','DHF','labs1','faculty'),
+		('faculty2','DHF','labs2','faculty'),
+		('faculty3','DHF','labs3','faculty'),
+		('faculty4','DHF','labs4','faculty'),
+
+		('students1','VF','students1','students'),
+		('students2','VF','students2','students'),
+		('students3','VF','students3','students');
+	""")
+	conn.commit()
+	# inserting values into predicate table
+	cur.execute("""
+		INSERT INTO PREDICATE VALUES(1,'CUSTOMER.cust_id <= 10');
+		INSERT INTO PREDICATE VALUES(2,'CUSTOMER.cust_id > 10');
+		INSERT INTO PREDICATE VALUES(3,'CUSTOMER.age >= 18');
+		INSERT INTO PREDICATE VALUES(4,'CUSTOMER.age < 30');
+		INSERT INTO PREDICATE VALUES(5,'CUSTOMER.age >= 30');
+		INSERT INTO PREDICATE VALUES(6,'CUSTOMER.age < 50');
+		INSERT INTO PREDICATE VALUES(7, 'CUSTOMER.age >= 50');
+		INSERT INTO PREDICATE VALUES(8,'BRANCH.branch_city = ''Hyderabad''');
+		INSERT INTO PREDICATE VALUES(9,'BRANCH.branch_city = ''Mumbai''');
+		INSERT INTO PREDICATE VALUES(10,'BRANCH.branch_city = ''Bangalore''');
+
+		INSERT INTO PREDICATE VALUES(11,'labs.lab_location = ''KCIS''');
+		INSERT INTO PREDICATE VALUES(12,'labs.lab_location = ''VINDHYA''');
+		INSERT INTO PREDICATE VALUES(13,'labs.lab_location = ''HIMALAYA''');
+		INSERT INTO PREDICATE VALUES(14,'labs.lab_location = ''NILGIRI''');
+
+	""")
+	# inserting values into FRAG_PRED_MAPPING table
+	cur.execute("""
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP1',1);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP1',3);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP1',4);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP2',2);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP2',3);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP2',4);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP3',1);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP3',5);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP3',6);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP4',2);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP4',5);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP4',6);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP5',1);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP5',7);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP6',2);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP6',7);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP7',8);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP8',9);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('MP9',10);
+
+		INSERT INTO FRAG_PRED_MAPPING VALUES('labs1',11);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('labs2',12);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('labs3',13);
+		INSERT INTO FRAG_PRED_MAPPING VALUES('labs4',14);
+
+
+	""")
+	# inserting values into FRAG_COL_INFO MAPPING TABLE (useful for vertical fragmentation)
+	cur.execute("""
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP1',15);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP1',10);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP1',18);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP2',15);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP2',16);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP2',17);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('VP2',19);
+
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students1',27);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students1',28);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students1',29);
+
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students2',27);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students2',31);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students2',33);
+
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students3',27);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students3',30);
+		INSERT INTO FRAG_COL_INFO_MAPPING VALUES ('students3',32);
+
+		
+	""")
+	# inserting values into mapping table
+	cur.execute("""
+		INSERT INTO MAPPING VALUES ('MP1','CP5' );
+		INSERT INTO MAPPING VALUES ('MP1', 'CP6' );
+		INSERT INTO MAPPING VALUES ('MP2', 'CP6');
+		INSERT INTO MAPPING VALUES ('MP2', 'CP7');
+		INSERT INTO MAPPING VALUES ('MP3', 'CP7');
+		INSERT INTO MAPPING VALUES ('MP3', 'CP8');
+		INSERT INTO MAPPING VALUES ('MP4', 'CP8');
+		INSERT INTO MAPPING VALUES ('MP4', 'CP5');
+		INSERT INTO MAPPING VALUES ('MP5', 'CP5');
+		INSERT INTO MAPPING VALUES ('MP5', 'CP6');
+		INSERT INTO MAPPING VALUES ('MP6', 'CP6');
+		INSERT INTO MAPPING VALUES ('MP6', 'CP7');
+		INSERT INTO MAPPING VALUES ('MP7', 'CP7');
+		INSERT INTO MAPPING VALUES ('MP7', 'CP8');
+		INSERT INTO MAPPING VALUES ('MP8', 'CP8');
+		INSERT INTO MAPPING VALUES ('MP8', 'CP5');
+		INSERT INTO MAPPING VALUES ('MP9', 'CP5');
+		INSERT INTO MAPPING VALUES ('MP9', 'CP6');
+		INSERT INTO MAPPING VALUES ('DP1', 'CP6');
+		INSERT INTO MAPPING VALUES ('DP1', 'CP7');
+		INSERT INTO MAPPING VALUES ('DP2', 'CP7');
+		INSERT INTO MAPPING VALUES ('DP2', 'CP8');
+		INSERT INTO MAPPING VALUES ('DP3','CP8');
+		INSERT INTO MAPPING VALUES ('DP3','CP5');
+		INSERT INTO MAPPING VALUES ('DP4','CP5');
+		INSERT INTO MAPPING VALUES ('DP4','CP6');
+		INSERT INTO MAPPING VALUES ('DP5','CP6');
+		INSERT INTO MAPPING VALUES ('DP5','CP7');
+		INSERT INTO MAPPING VALUES ('DP6','CP7');
+		INSERT INTO MAPPING VALUES ('DP6','CP8');
+		INSERT INTO MAPPING VALUES ('VP1','CP8');
+		INSERT INTO MAPPING VALUES ('VP1','CP5');
+		INSERT INTO MAPPING VALUES ('VP2','CP5');
+		INSERT INTO MAPPING VALUES ('VP2','CP6');
+
+		INSERT INTO MAPPING VALUES ('labs1','CP5');
+		INSERT INTO MAPPING VALUES ('labs2','CP6');	
+		INSERT INTO MAPPING VALUES ('labs3','CP7');	
+		INSERT INTO MAPPING VALUES ('labs4','CP8');
+
+		INSERT INTO MAPPING VALUES ('faculty1','CP5');
+		INSERT INTO MAPPING VALUES ('faculty2','CP6');
+		INSERT INTO MAPPING VALUES ('faculty3','CP7');
+		INSERT INTO MAPPING VALUES ('faculty4','CP8');
+
+		INSERT INTO MAPPING VALUES ('students1','CP5');
+		INSERT INTO MAPPING VALUES ('students2','CP6');
+		INSERT INTO MAPPING VALUES ('students3','CP6');		
+	""")
+	conn.commit()
+	output = cur.fetchall()
+	print(output)
+	# To close the connection
+	conn.close()
+# Driver Code
+if __name__ == "__main__" :
+	for address in ip_address:
+		mysqlconnect(address)

@@ -1,0 +1,4 @@
+FragmentName,FragmentType,AllocationSites,FragmentationCondition,ColumnNames
+EMP1,HF,CP5,Dept_Name=‘Sales’  and Dept_Name!=‘ADMIN’ and Loc_Id=‘HYD’ and Loc_Id!=‘MUM’,Emp_Id Dept_Name Loc_Id Desgn_Id Reports_to
+EMP2,HF,CP6,Dept_Name!=‘Sales’  and Dept_Name=‘ADMIN’ and Loc_Id=‘HYD’ and Loc_Id!=‘MUM’,Emp_Id Dept_Name Loc_Id Desgn_Id Reports_to
+EMP3,HF,CP6,Dept_Name!=‘Sales’  and Dept_Name=‘ADMIN’ and Loc_Id=‘HYD’ and Loc_Id!=‘MUM’,Emp_Id Dept_Name Loc_Id Desgn_Id Reports_to
